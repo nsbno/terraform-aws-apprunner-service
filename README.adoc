@@ -1,0 +1,27 @@
+= apprunner-service
+:!toc-title:
+:!toc-placement:
+:toc:
+
+Set up an https://docs.aws.amazon.com/apprunner/[AWS App Runner] service
+
+toc::[]
+
+== About
+
+This module creates an AWS App Runner service which deploys images from a private ECR.
+
+== Usage
+To use this module, just add it to your terraform!
+
+// TODO: Add variables to the module example!
+
+[source, hcl]
+----
+module "apprunner-service" {
+  source = "github.com/nsbno/terraform-aws-apprunner-service?ref=x.y.z"
+
+
+}
+----
+
