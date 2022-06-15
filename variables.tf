@@ -3,11 +3,6 @@ variable "name_prefix" {
   type        = string
 }
 
-variable "application_name" {
-  description = "The name of the application -- used together with name_prefix to name application-specific resources."
-  type        = string
-}
-
 variable "tags" {
   description = "A map of tags (key-value pairs) passed to resources."
   type        = map(string)
@@ -66,7 +61,12 @@ variable "auto_deployment" {
   default     = false
 }
 
-variable "domain_name" {
+variable "hosted_zone_name" {
   description = "The domain name of the hosted zone to set up the custom domain name in"
+  type        = string
+}
+
+variable "host_name" {
+  description = "The name of the application -- used together with name_prefix to name application-specific resources."
   type        = string
 }

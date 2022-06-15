@@ -16,11 +16,11 @@ terraform {
 ##################################
 
 resource "aws_apprunner_service" "service" {
-  service_name = "${var.name_prefix}-${var.application_name}"
+  service_name = var.name_prefix
 
   source_configuration {
     authentication_configuration {
-      access_role_arn = aws_iam_role.access_role.arn
+      access_role_arn = aws_iam_role.ecr_access_role.arn
     }
     image_repository {
       image_identifier      = "${var.ecr_url}:${var.image_tag}"
@@ -58,7 +58,7 @@ resource "aws_apprunner_auto_scaling_configuration_version" "autoscaling" {
 ##################################
 
 resource "aws_iam_role" "task_role" {
-  name               = "${var.name_prefix}-${var.application_name}-task-role"
+  name               = "${var.name_prefix}-task-role"
   assume_role_policy = data.aws_iam_policy_document.task_assume_policy.json
 }
 
@@ -79,8 +79,8 @@ data "aws_iam_policy_document" "task_assume_policy" {
 #                                #
 ##################################
 
-resource "aws_iam_role" "access_role" {
-  name               = "${var.name_prefix}-${var.application_name}-access-role"
+resource "aws_iam_role" "ecr_access_role" {
+  name               = "${var.name_prefix}-access-role"
   assume_role_policy = data.aws_iam_policy_document.access_assume_policy.json
 }
 
@@ -113,7 +113,7 @@ data "aws_iam_policy_document" "access_policy" {
 }
 
 resource "aws_iam_policy" "access_policy" {
-  name   = "${var.name_prefix}-${var.application_name}-access-policy"
+  name   = "${var.name_prefix}-access-policy"
   path   = "/"
   policy = data.aws_iam_policy_document.access_policy.json
 }
@@ -129,32 +129,37 @@ resource "aws_iam_role_policy_attachment" "access_role_policy_attachment" {
 #                                #
 ##################################
 
+data "aws_route53_zone" "zone" {
+  name = var.hosted_zone_name
+}
+
+resource "aws_route53_record" "record" {
+  zone_id = data.aws_route53_zone.zone.zone_id
+  name    = "${var.host_name}.${data.aws_route53_zone.zone.name}"
+  type    = "CNAME"
+  ttl     = 7200
+  records = [aws_apprunner_service.service.service_url]
+}
+
 resource "aws_apprunner_custom_domain_association" "service" {
   domain_name          = aws_route53_record.record.name
   service_arn          = aws_apprunner_service.service.arn
   enable_www_subdomain = false
 }
 
-data "aws_route53_zone" "zone" {
-  name = var.domain_name
-}
+# Problem: Length of certificate_validation_records map is only known after apply
+# resource "aws_route53_record" "validation" {
+#   for_each = { for record in aws_apprunner_custom_domain_association.service.certificate_validation_records : record.name => record }
 
-resource "aws_route53_record" "record" {
-  zone_id = data.aws_route53_zone.zone.zone_id
-  name    = "${var.application_name}.${data.aws_route53_zone.zone.name}"
-  type    = "CNAME"
-  ttl     = 7200
-  records = [aws_apprunner_service.service.service_url]
-}
+#   name = each.value.name
+#   records = [
+#     each.value.value
+#   ]
+#   ttl     = 3600
+#   type    = each.value.type
+#   zone_id = data.aws_route53_zone.zone.zone_id
 
-resource "aws_route53_record" "validation" {
-  for_each = { for record in aws_apprunner_custom_domain_association.service.certificate_validation_records : record.name => record }
-
-  name = each.value.name
-  records = [
-    each.value.value
-  ]
-  ttl     = 3600
-  type    = each.value.type
-  zone_id = data.aws_route53_zone.zone.zone_id
-}
+#   depends_on = [
+#     aws_apprunner_custom_domain_association.service
+#   ]
+# }
