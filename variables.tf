@@ -9,6 +9,18 @@ variable "tags" {
   default     = {}
 }
 
+variable "cpu" {
+  description = "The number of CPU units available to the application (1024|2048)"
+  type        = string
+  default     = "1024"
+}
+
+variable "memory" {
+  description = "The amount of memory in MB available to the application (2048|3072|4096)"
+  type        = string
+  default     = "2048"
+}
+
 variable "min_instances" {
   description = "Minimum number of instances"
   type        = number
@@ -61,12 +73,7 @@ variable "auto_deployment" {
   default     = false
 }
 
-variable "hosted_zone_name" {
-  description = "The domain name of the hosted zone to set up the custom domain name in"
-  type        = string
-}
-
-variable "host_name" {
-  description = "The name of the application -- used together with name_prefix to name application-specific resources."
-  type        = string
+variable "domain_name" {
+  description = "A map containing a domain and name of the associated hosted zone."
+  type        = map(string)
 }

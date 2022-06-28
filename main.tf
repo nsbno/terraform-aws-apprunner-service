@@ -34,12 +34,18 @@ resource "aws_apprunner_service" "service" {
   }
 
   instance_configuration {
+    cpu               = var.cpu
+    memory            = var.memory
     instance_role_arn = aws_iam_role.task_role.arn
   }
 
   auto_scaling_configuration_arn = aws_apprunner_auto_scaling_configuration_version.autoscaling.arn
 
   tags = var.tags
+
+  depends_on = [
+    aws_iam_role.ecr_access_role
+  ]
 }
 
 resource "aws_apprunner_auto_scaling_configuration_version" "autoscaling" {
@@ -130,12 +136,12 @@ resource "aws_iam_role_policy_attachment" "access_role_policy_attachment" {
 ##################################
 
 data "aws_route53_zone" "zone" {
-  name = var.hosted_zone_name
+  name = var.domain_name.zone
 }
 
 resource "aws_route53_record" "record" {
   zone_id = data.aws_route53_zone.zone.zone_id
-  name    = "${var.host_name}.${data.aws_route53_zone.zone.name}"
+  name    = var.domain_name.name
   type    = "CNAME"
   ttl     = 7200
   records = [aws_apprunner_service.service.service_url]
@@ -148,18 +154,18 @@ resource "aws_apprunner_custom_domain_association" "service" {
 }
 
 # Problem: Length of certificate_validation_records map is only known after apply
-# resource "aws_route53_record" "validation" {
-#   for_each = { for record in aws_apprunner_custom_domain_association.service.certificate_validation_records : record.name => record }
+resource "aws_route53_record" "validation" {
+  for_each = { for record in aws_apprunner_custom_domain_association.service.certificate_validation_records : record.name => record }
 
-#   name = each.value.name
-#   records = [
-#     each.value.value
-#   ]
-#   ttl     = 3600
-#   type    = each.value.type
-#   zone_id = data.aws_route53_zone.zone.zone_id
+  name = each.value.name
+  records = [
+    each.value.value
+  ]
+  ttl     = 3600
+  type    = each.value.type
+  zone_id = data.aws_route53_zone.zone.zone_id
 
-#   depends_on = [
-#     aws_apprunner_custom_domain_association.service
-#   ]
-# }
+  depends_on = [
+    aws_apprunner_custom_domain_association.service
+  ]
+}
