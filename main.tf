@@ -66,6 +66,8 @@ resource "aws_apprunner_auto_scaling_configuration_version" "autoscaling" {
 resource "aws_iam_role" "task_role" {
   name               = "${var.name_prefix}-task-role"
   assume_role_policy = data.aws_iam_policy_document.task_assume_policy.json
+
+  tags = var.tags
 }
 
 data "aws_iam_policy_document" "task_assume_policy" {
@@ -88,6 +90,8 @@ data "aws_iam_policy_document" "task_assume_policy" {
 resource "aws_iam_role" "ecr_access_role" {
   name               = "${var.name_prefix}-access-role"
   assume_role_policy = data.aws_iam_policy_document.access_assume_policy.json
+
+  tags = var.tags
 }
 
 data "aws_iam_policy_document" "access_assume_policy" {
