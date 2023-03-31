@@ -50,12 +50,13 @@ resource "aws_apprunner_service" "service" {
 
 resource "aws_apprunner_auto_scaling_configuration_version" "autoscaling" {
   auto_scaling_configuration_name = "limited-scaling"
-  max_concurrency                 = 100
-  min_size                        = var.min_instances
-  max_size                        = var.max_instances
+  max_concurrency                 = var.auto_scaling.max_concurrency
+  min_size                        = var.auto_scaling.min_instances
+  max_size                        = var.auto_scaling.max_instances
 
   tags = var.tags
 }
+
 
 ##################################
 #                                #
