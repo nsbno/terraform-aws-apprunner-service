@@ -71,5 +71,8 @@ variable "auto_deployment" {
 
 variable "domain_name" {
   description = "A map containing a domain and name of the associated hosted zone."
-  type        = map(string)
+  type = object({
+    name = string
+    zone = string
+  })
 }
