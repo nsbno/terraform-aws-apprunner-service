@@ -9,6 +9,11 @@ terraform {
   }
 }
 
+locals {
+  use_vpc_connector = (length(var.vpc_config.subnet_ids) > 0 && length(var.vpc_config.security_groups) > 0)
+}
+
+
 ##################################
 #                                #
 # AppRunner service              #
@@ -41,11 +46,31 @@ resource "aws_apprunner_service" "service" {
 
   auto_scaling_configuration_arn = aws_apprunner_auto_scaling_configuration_version.autoscaling.arn
 
+  dynamic "network_configuration" {
+    for_each = local.use_vpc_connector ? [aws_apprunner_vpc_connector.service] : []
+
+    content {
+      egress_configuration {
+        egress_type       = "VPC"
+        vpc_connector_arn = try(network_configuration.vpc_connector_arn, null)
+      }
+    }
+  }
+
   tags = var.tags
 
   depends_on = [
     aws_iam_role.ecr_access_role
   ]
+}
+
+resource "aws_apprunner_vpc_connector" "service" {
+  count              = local.use_vpc_connector ? 1 : 0
+  vpc_connector_name = var.name_prefix
+  subnets            = var.vpc_config.subnet_ids
+  security_groups    = var.vpc_config.security_groups
+
+  tags = var.tags
 }
 
 resource "aws_apprunner_auto_scaling_configuration_version" "autoscaling" {

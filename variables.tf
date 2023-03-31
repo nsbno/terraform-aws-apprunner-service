@@ -76,3 +76,15 @@ variable "domain_name" {
     zone = string
   })
 }
+
+variable "vpc_config" {
+  description = "Enable outbound VPC access for service"
+  type = object({
+    subnet_ids      = list(string)
+    security_groups = list(string)
+  })
+  default = {
+    subnet_ids      = []
+    security_groups = []
+  }
+}
