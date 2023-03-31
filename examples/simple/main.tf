@@ -3,8 +3,12 @@ provider "aws" {
 }
 
 locals {
-  name_prefix = "example"
+  name_prefix      = "example"
   application_name = "simple"
+}
+
+data "aws_ecr_repository" "ecr" {
+  name = "${local.name_prefix}-${local.application_name}"
 }
 
 module "service" {
@@ -12,11 +16,13 @@ module "service" {
 
   name_prefix = local.name_prefix
 
-  ecr_arn = ""
-  ecr_url = ""
+  ecr_arn = data.aws_ecr_repository.ecr.arn
+  ecr_url = data.aws_ecr_repository.ecr.repository_url
 
-  hosted_zone_name = ""
-  host_name = ""
+  domain_name = {
+    name = "simple.example.com"
+    zone = "example.com"
+  }
 
   tags = {
     environment = "example"
