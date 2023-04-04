@@ -52,7 +52,7 @@ resource "aws_apprunner_service" "service" {
     content {
       egress_configuration {
         egress_type       = "VPC"
-        vpc_connector_arn = try(network_configuration.vpc_connector_arn, null)
+        vpc_connector_arn = try(aws_apprunner_vpc_connector.service[0].arn, null)
       }
     }
   }
