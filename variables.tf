@@ -47,6 +47,12 @@ variable "environment_variables" {
   default     = {}
 }
 
+variable "environment_secrets" {
+  description = "Secrets and parameters available to your service as environment variables. Set the value to the ARN of a secret in Parameter Store or Secrets Manager."
+  type        = map(string)
+  default     = {}
+}
+
 variable "ecr_arn" {
   description = "The ARN of the ECR containing the application images"
   type        = string

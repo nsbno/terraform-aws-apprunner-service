@@ -4,7 +4,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = ">= 3.0.0"
+      version = ">= 4.61.0"
     }
   }
 }
@@ -33,6 +33,7 @@ resource "aws_apprunner_service" "service" {
       image_configuration {
         port                          = var.application_port
         runtime_environment_variables = var.environment_variables
+        runtime_environment_secrets   = var.environment_secrets
       }
     }
     auto_deployments_enabled = var.auto_deployment
