@@ -21,22 +21,18 @@ variable "memory" {
   default     = "2048"
 }
 
-variable "min_instances" {
-  description = "Minimum number of instances"
-  type        = number
-  default     = 1
-}
-
-variable "max_instances" {
-  description = "Maximum number of instances"
-  type        = number
-  default     = 2
-}
-
-variable "max_concurrency" {
-  description = "Maximum number of concurrent requests. Exceeding this limit scales up the service"
-  type        = number
-  default     = 100
+variable "auto_scaling" {
+  description = "Autoscaling configuration"
+  type = object({
+    min_instances   = number
+    max_instances   = number
+    max_concurrency = number
+  })
+  default = {
+    min_instances   = 1
+    max_instances   = 2
+    max_concurrency = 100
+  }
 }
 
 variable "application_port" {
@@ -47,6 +43,12 @@ variable "application_port" {
 
 variable "environment_variables" {
   description = "Environment variables that is passed to the container"
+  type        = map(string)
+  default     = {}
+}
+
+variable "environment_secrets" {
+  description = "Secrets and parameters available to your service as environment variables. Set the value to the ARN of a secret in Parameter Store or Secrets Manager."
   type        = map(string)
   default     = {}
 }
@@ -75,5 +77,20 @@ variable "auto_deployment" {
 
 variable "domain_name" {
   description = "A map containing a domain and name of the associated hosted zone."
-  type        = map(string)
+  type = object({
+    name = string
+    zone = string
+  })
+}
+
+variable "vpc_config" {
+  description = "Enable outbound VPC access for service"
+  type = object({
+    subnet_ids      = list(string)
+    security_groups = list(string)
+  })
+  default = {
+    subnet_ids      = []
+    security_groups = []
+  }
 }

@@ -4,10 +4,15 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = ">= 3.0.0"
+      version = ">= 4.51.0"
     }
   }
 }
+
+locals {
+  use_vpc_connector = (length(var.vpc_config.subnet_ids) > 0 && length(var.vpc_config.security_groups) > 0)
+}
+
 
 ##################################
 #                                #
@@ -28,6 +33,7 @@ resource "aws_apprunner_service" "service" {
       image_configuration {
         port                          = var.application_port
         runtime_environment_variables = var.environment_variables
+        runtime_environment_secrets   = var.environment_secrets
       }
     }
     auto_deployments_enabled = var.auto_deployment
@@ -41,6 +47,17 @@ resource "aws_apprunner_service" "service" {
 
   auto_scaling_configuration_arn = aws_apprunner_auto_scaling_configuration_version.autoscaling.arn
 
+  dynamic "network_configuration" {
+    for_each = local.use_vpc_connector ? aws_apprunner_vpc_connector.service : []
+
+    content {
+      egress_configuration {
+        egress_type       = "VPC"
+        vpc_connector_arn = try(network_configuration.value.arn, null)
+      }
+    }
+  }
+
   tags = var.tags
 
   depends_on = [
@@ -48,14 +65,24 @@ resource "aws_apprunner_service" "service" {
   ]
 }
 
-resource "aws_apprunner_auto_scaling_configuration_version" "autoscaling" {
-  auto_scaling_configuration_name = "limited-scaling"
-  max_concurrency                 = 100
-  min_size                        = var.min_instances
-  max_size                        = var.max_instances
+resource "aws_apprunner_vpc_connector" "service" {
+  count              = local.use_vpc_connector ? 1 : 0
+  vpc_connector_name = var.name_prefix
+  subnets            = var.vpc_config.subnet_ids
+  security_groups    = var.vpc_config.security_groups
 
   tags = var.tags
 }
+
+resource "aws_apprunner_auto_scaling_configuration_version" "autoscaling" {
+  auto_scaling_configuration_name = "limited-scaling"
+  max_concurrency                 = var.auto_scaling.max_concurrency
+  min_size                        = var.auto_scaling.min_instances
+  max_size                        = var.auto_scaling.max_instances
+
+  tags = var.tags
+}
+
 
 ##################################
 #                                #
