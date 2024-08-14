@@ -185,16 +185,14 @@ resource "aws_apprunner_custom_domain_association" "service" {
 }
 
 # Problem: Length of certificate_validation_records map is only known after apply
+# ugly workaround to make terraform evaluate the length at runtime and not at plan time, since the records don't exist before then.
 resource "aws_route53_record" "validation" {
-  for_each = { for record in aws_apprunner_custom_domain_association.service.certificate_validation_records : record.name => record }
-
-  name = each.value.name
-  records = [
-    each.value.value
-  ]
-  ttl     = 3600
-  type    = each.value.type
+  count   = 2
+  name    = tolist(aws_apprunner_custom_domain_association.service.certificate_validation_records)[count.index].name
+  type    = tolist(aws_apprunner_custom_domain_association.service.certificate_validation_records)[count.index].type
   zone_id = data.aws_route53_zone.zone.zone_id
+  records = [tolist(aws_apprunner_custom_domain_association.service.certificate_validation_records)[count.index].value]
+  ttl     = 3600
 
   depends_on = [
     aws_apprunner_custom_domain_association.service
